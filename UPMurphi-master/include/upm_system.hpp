@@ -52,9 +52,9 @@ class StateManager
   std::vector<RULE_INDEX_TYPE> astar_rule;
   std::vector<char> astar_goal;
 
-  double EstimateHeuristic(state *s, bool goal) const;
+  double EstimateHeuristic(state *snapshot, bool goal) const;
   void RecordAStarData(unsigned long index, unsigned long parent, RULE_INDEX_TYPE rule,
-                       double g_cost, bool goal);
+                       double g_cost, bool goal, state *snapshot);
 
  public:
   StateManager(bool createqueue, unsigned long NumStates, bool use_priority=false);

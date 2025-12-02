@@ -25,7 +25,7 @@ StateManager::StateManager(bool createqueue, unsigned long NumStates, bool use_p
     astar_g.assign(NumStates, std::numeric_limits<double>::infinity());
     astar_h.assign(NumStates, 0.0);
     astar_f.assign(NumStates, std::numeric_limits<double>::infinity());
-    astar_parent.assign(NumStates, std::numeric_limits<unsigned long>::max());
+    astar_parent.assign(NumStates, (std::numeric_limits<unsigned long>::max)());
     astar_rule.assign(NumStates, 0);
     astar_goal.assign(NumStates, 0);
   }
@@ -82,7 +82,8 @@ bool StateManager::Add(state * s, bool valid, bool permanent, unsigned long *ind
                         transition->parent_index,
                         transition->applied_rule,
                         candidate,
-                        astar_goal[state_index]);
+                        astar_goal[state_index],
+                        s);
         if (queue!=NULL)
           queue->enqueue(s,state_index);
       }
@@ -98,6 +99,7 @@ bool StateManager::Add(state * s, bool valid, bool permanent, unsigned long *ind
 
   bool goal_state = false;
   bool state_valid = false;
+  bool enqueue_state = false;
 
   if (!Properties->CheckInvariants()) {
     if (iserror!=NULL) (*iserror)=true;
@@ -110,18 +112,18 @@ bool StateManager::Add(state * s, bool valid, bool permanent, unsigned long *ind
     AddGoal(state_index);
     num_goals++;
     if (astar_mode) {
-      queue->enqueue(s,state_index);
       state_valid = true;
+      enqueue_state = true;
     } else {
 #ifdef HASHC
       delete s;
 #endif
     }
   } else {
+    state_valid = true;
+    enqueue_state = true;
     if (!astar_mode)
       statesNextLevel++;
-    queue->enqueue(s,state_index);
-    state_valid = true;
   }
 
   if (astar_mode && state_valid && state_index < astar_g.size()) {
@@ -134,7 +136,11 @@ bool StateManager::Add(state * s, bool valid, bool permanent, unsigned long *ind
       parent_cost = astar_g[transition->parent_index];
     }
     double g_cost = parent_cost + (transition!=NULL ? transition->step_cost : 0.0);
-    RecordAStarData(state_index, parent_idx, parent_rule, g_cost, goal_state);
+    RecordAStarData(state_index, parent_idx, parent_rule, g_cost, goal_state, s);
+  }
+
+  if (enqueue_state) {
+    queue->enqueue(s,state_index);
   }
 
   if (index!=NULL) *index = state_index;
@@ -399,7 +405,7 @@ void StateManager::print_trace(StatePtr p)
 }
 
 void StateManager::RecordAStarData(unsigned long index, unsigned long parent, RULE_INDEX_TYPE rule,
-                                   double g_cost, bool goal)
+                                   double g_cost, bool goal, state *snapshot)
 {
   if (!astar_mode || index >= astar_g.size())
     return;
@@ -407,17 +413,44 @@ void StateManager::RecordAStarData(unsigned long index, unsigned long parent, RU
   astar_parent[index] = parent;
   astar_rule[index] = rule;
   astar_g[index] = g_cost;
-  double h_cost = EstimateHeuristic(NULL, goal);
+  double h_cost = EstimateHeuristic(snapshot, goal);
   astar_h[index] = h_cost;
   astar_f[index] = g_cost + h_cost;
   astar_goal[index] = goal ? 1 : 0;
 }
 
-double StateManager::EstimateHeuristic(state * /*unused*/, bool goal) const
+double StateManager::EstimateHeuristic(state *snapshot, bool goal) const
 {
-  if (goal)
+  if (goal || !astar_mode)
     return 0.0;
-  return 1.0;
+
+  if (numgoals==0)
+    return 0.0;
+
+  state backup;
+  state *current = NULL;
+  bool restore_world = false;
+
+  if (snapshot != NULL) {
+    current = theworld.getstate();
+    if (current != NULL) {
+      StateCopy(&backup, current);
+      restore_world = true;
+    }
+    theworld.setstate(snapshot);
+  }
+
+  unsigned unsatisfied = 0;
+  for (unsigned short g=0; g<numgoals; ++g) {
+    if (!(::goals[g].condition)())
+      ++unsatisfied;
+  }
+
+  if (restore_world) {
+    theworld.setstate(&backup);
+  }
+
+  return unsatisfied == 0 ? 0.0 : static_cast<double>(unsatisfied);
 }
 
 bool StateManager::IsGoalState(unsigned long index) const
@@ -435,7 +468,7 @@ double StateManager::GetAStarCost(unsigned long index) const
 unsigned long StateManager::GetAStarParent(unsigned long index) const
 {
   if (!astar_mode || index >= astar_parent.size())
-    return std::numeric_limits<unsigned long>::max();
+    return (std::numeric_limits<unsigned long>::max)();
   return astar_parent[index];
 }
 
@@ -1864,7 +1897,7 @@ AlgorithmManager::Explore_astar()
   setofrules fire;
   bool deadlocked;
   state_and_index *sid;
-  unsigned long expanded_goal = std::numeric_limits<unsigned long>::max();
+  unsigned long expanded_goal = (std::numeric_limits<unsigned long>::max)();
   double horizon_limit = static_cast<double>(args->horizon.value);
   bool enforce_horizon = (args->horizon.value < 1000000);
 

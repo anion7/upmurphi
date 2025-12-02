@@ -16,8 +16,6 @@
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
 
-static const double ASTAR_PRIORITY_EPS = 1e-9;
-
 
 /****************************************
   There are 3 groups of implementations:
@@ -386,22 +384,16 @@ void state_queue::enqueue(state * &e, unsigned long index)
 
 state_and_index *state_queue::priority_access(bool pop)
 {
-  while (!priority_queue_storage.empty()) {
-    astar_entry entry = priority_queue_storage.top();
-    double reference = entry.priority;
-    if (priority_reference != NULL && entry.node.i < priority_reference->size())
-      reference = (*priority_reference)[entry.node.i];
-    if (fabs(reference - entry.priority) > ASTAR_PRIORITY_EPS) {
-      priority_queue_storage.pop();
-      continue;
-    }
-    priority_last = entry.node;
-    if (pop)
-      priority_queue_storage.pop();
-    return &priority_last;
+  if (priority_queue_storage.empty()) {
+    QueueEmptyFault();
+    return NULL;
   }
-  QueueEmptyFault();
-  return NULL;
+
+  astar_entry entry = priority_queue_storage.top();
+  priority_last = entry.node;
+  if (pop)
+    priority_queue_storage.pop();
+  return &priority_last;
 }
 
 state_and_index *state_queue::dequeue(void)
