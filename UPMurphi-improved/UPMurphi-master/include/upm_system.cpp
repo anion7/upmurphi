@@ -25,7 +25,7 @@ StateManager::StateManager(bool createqueue, unsigned long NumStates, bool use_p
     astar_g.assign(NumStates, std::numeric_limits<double>::infinity());
     astar_h.assign(NumStates, 0.0);
     astar_f.assign(NumStates, std::numeric_limits<double>::infinity());
-    astar_parent.assign(NumStates, std::numeric_limits<unsigned long>::max());
+    astar_parent.assign(NumStates, (std::numeric_limits<unsigned long>::max)());
     astar_rule.assign(NumStates, 0);
     astar_goal.assign(NumStates, 0);
   }
@@ -435,7 +435,7 @@ double StateManager::GetAStarCost(unsigned long index) const
 unsigned long StateManager::GetAStarParent(unsigned long index) const
 {
   if (!astar_mode || index >= astar_parent.size())
-    return std::numeric_limits<unsigned long>::max();
+    return (std::numeric_limits<unsigned long>::max)();
   return astar_parent[index];
 }
 
@@ -1864,7 +1864,7 @@ AlgorithmManager::Explore_astar()
   setofrules fire;
   bool deadlocked;
   state_and_index *sid;
-  unsigned long expanded_goal = std::numeric_limits<unsigned long>::max();
+  unsigned long expanded_goal = (std::numeric_limits<unsigned long>::max)();
   double horizon_limit = static_cast<double>(args->horizon.value);
   bool enforce_horizon = (args->horizon.value < 1000000);
 
