@@ -110,7 +110,6 @@ bool StateManager::Add(state * s, bool valid, bool permanent, unsigned long *ind
     AddGoal(state_index);
     num_goals++;
     if (astar_mode) {
-      queue->enqueue(s,state_index);
       state_valid = true;
     } else {
 #ifdef HASHC
@@ -120,7 +119,6 @@ bool StateManager::Add(state * s, bool valid, bool permanent, unsigned long *ind
   } else {
     if (!astar_mode)
       statesNextLevel++;
-    queue->enqueue(s,state_index);
     state_valid = true;
   }
 
@@ -135,6 +133,10 @@ bool StateManager::Add(state * s, bool valid, bool permanent, unsigned long *ind
     }
     double g_cost = parent_cost + (transition!=NULL ? transition->step_cost : 0.0);
     RecordAStarData(state_index, parent_idx, parent_rule, g_cost, goal_state);
+  }
+
+  if (state_valid) {
+    queue->enqueue(s,state_index);
   }
 
   if (index!=NULL) *index = state_index;
