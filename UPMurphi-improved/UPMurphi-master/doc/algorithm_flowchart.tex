@@ -103,11 +103,29 @@
 
 % ═══════════════════════════════════════════════════
 %   Phase 1: State Space Exploration
+%   Use fit to ensure algo boxes are fully inside
 % ═══════════════════════════════════════════════════
 
-\node[phasebox={phase1border}{phase1bg}, below=1.4cm of planner] (phase1) {
-  \phasetitle{phase1border}{Phase 1: 状态空间探索 (State Space Exploration)}%
-  \\[24pt]% leave room for the algorithm boxes drawn on top
+% Phase 1 title (invisible anchor to position content)
+\node[below=1.4cm of planner, font=\small, anchor=north] (p1title) {
+  \phasetitle{phase1border}{Phase 1: 状态空间探索 (State Space Exploration)}
+};
+
+% Three algorithm boxes below the title
+\node[algobox=algbfs,   below=0.5em of p1title.south, xshift=-7.5em] (bfs)   {BFS\\\scriptsize FIFO Queue};
+\node[algobox=algdfs,   below=0.5em of p1title.south]                (dfs)   {DFS\\\scriptsize Stack};
+\node[algobox=algastar, below=0.5em of p1title.south, xshift=7.5em]  (astar) {A*\\\scriptsize MinHeap\\[-2pt]\scriptsize $f\!=\!g\!+\!h$};
+
+% Merge lines from three algo boxes
+\coordinate (algmerge) at ($(dfs.south)+(0,-0.6em)$);
+\draw[line width=0.6pt, color=black!50] (bfs.south)   |- (algmerge);
+\draw[line width=0.6pt, color=black!50] (dfs.south)   --  (algmerge);
+\draw[line width=0.6pt, color=black!50] (astar.south) |- (algmerge);
+\filldraw[black!50] (algmerge) circle (1.5pt);
+
+% Description text below the algo boxes
+\node[below=1.2em of algmerge, anchor=north, text width=24em, align=left, font=\small]
+  (p1body) {
   对每个状态调用 \textsc{AllNextStates}():\\[2pt]
   \quad$\triangleright$ 施加所有 enabled rules\\
   \quad$\triangleright$ \textsc{Add}(nextstate, transition)\\
@@ -115,19 +133,15 @@
   \textbf{输出:} 状态集合, 转移文件, 目标文件
 };
 
-% three algorithm boxes inside phase 1
-\node[algobox=algbfs,   anchor=south] at ($(phase1.north)+(-7em,-1.6em)$)  (bfs)   {BFS\\\scriptsize FIFO Queue};
-\node[algobox=algdfs,   anchor=south] at ($(phase1.north)+(0em,-1.6em)$)   (dfs)   {DFS\\\scriptsize Stack};
-\node[algobox=algastar, anchor=south] at ($(phase1.north)+(7em,-1.6em)$)   (astar) {A*\\\scriptsize MinHeap\\[-2pt]\scriptsize $f\!=\!g\!+\!h$};
+% Draw the Phase 1 box around everything using fit
+\begin{scope}[on background layer]
+  \node[fit=(p1title)(bfs)(astar)(p1body),
+        rectangle, rounded corners=5pt,
+        draw=phase1border, line width=1.2pt, fill=phase1bg,
+        inner xsep=12pt, inner ysep=10pt] (phase1) {};
+\end{scope}
 
-% merge lines from three algo boxes
-\coordinate (algmerge) at ($(phase1.north)+(0em,-4em)$);
-\draw[line width=0.6pt, color=black!50] (bfs.south)   |- (algmerge);
-\draw[line width=0.6pt, color=black!50] (dfs.south)   --  (algmerge);
-\draw[line width=0.6pt, color=black!50] (astar.south) |- (algmerge);
-\filldraw[black!50] (algmerge) circle (1.5pt);
-
-% arrow from planner to phase 1
+% Arrow from planner to phase 1
 \draw[myarrow] (planner.south) -- (phase1.north);
 
 % ═══════════════════════════════════════════════════
