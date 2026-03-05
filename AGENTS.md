@@ -39,6 +39,28 @@ cd UPMurphi-master/ex/generator_linear
 
 This compiles the PDDL+ domain/problem into a planner binary, then runs it to find a plan. Output is written to `genproblinear_plan.pddl`.
 
+### ROS2 integration
+
+ROS2 Jazzy is installed (`/opt/ros/jazzy`). Source it with `source /opt/ros/jazzy/setup.bash` (already in `~/.bashrc`).
+
+The `upmurphi_ros_bridge/` package connects UPMurphi plan output to ROS2:
+
+```bash
+# Standalone solve + dispatch
+cd upmurphi_ros_bridge/scripts
+python3 upmurphi_solve_and_dispatch.py \
+    --domain path/to/domain.pddl --problem path/to/problem.pddl \
+    --algorithm astar --handler simulated
+
+# ROS2 node dispatch
+python3 ros2_plan_dispatcher.py --ros-args -p plan_file:=plan.pddl
+
+# Animated Gantt visualization
+python3 plan_visualizer.py plan.pddl --animate
+```
+
+Published topics: `/upmurphi/action_dispatch`, `/upmurphi/dispatch_status`, `/upmurphi/plan`.
+
 ### Linting / testing
 
 There are no dedicated lint or test targets. Correctness is verified by building the tools and running them against example PDDL+ problems in `ex/`. The build itself (via `make`) is the primary quality gate.
