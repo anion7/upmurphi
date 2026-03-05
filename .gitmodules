@@ -1,0 +1,3 @@
+[submodule "rosplan_demos"]
+	path = rosplan_demos
+	url = https://github.com/KCL-Planning/rosplan_demos.git
